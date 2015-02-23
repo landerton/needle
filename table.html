@@ -1,0 +1,113 @@
+<html ng-app="app">
+  <head>
+    <title>Needle Table Assessement</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular.min.js"></script>
+
+    <style>
+      table, th, td {
+          border: 1px solid black;
+          border-collapse: collapse;
+          padding: 5px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <form name="tableForm" ng-controller="TableController">
+      <table style="width:100%">
+
+        <!-- Column headers -->
+        <tr>
+          <th ng-repeat="column in columnTotals track by $index">Col {{$index + 1}}</th>
+          <th>Total</th>
+        </tr>
+
+        <!-- Input cells and row totals -->
+        <tr ng-repeat="row in table">
+          <td ng-repeat="cell in row.cells"><input style="width:100%" type="number" value="{{cell.value}}" ng-model="cell.value"></td>
+          <td>{{ row.total| currency }}</td>
+        </tr>
+
+        <!-- Column totals -->
+        <tr>
+          <td ng-repeat="total in columnTotals">{{ total.value | currency }}</td>
+          <td></td>
+        </tr>
+
+        <!-- Error Message -->
+        <tr ng-show="tableForm.$error.number">
+          <td colspan="7">Table contains a cell with an invalid number!</td>
+        </tr>
+      </table>
+    </form>
+
+    <script>
+      angular.module("app", [])
+        .controller('TableController', ['$scope', function ($scope) {
+
+          $scope.numInputRows = 6;
+
+          $scope.table = [];
+
+          $scope.columnTotals = [];
+
+          $scope.$watch('table', function() {
+            // Add first row if table is empty
+            if ($scope.table.length == 0) {
+              $scope.addRow();
+            }
+
+            // Initialize empty array for column totals
+            var columnTotals = $scope.emptyRow();
+
+            // Loop through each row in table
+            angular.forEach($scope.table, function(row, rowIndex) {
+              row.total = 0;
+
+              // Loop through each cell in row and update totals
+              angular.forEach(row.cells, function(cell, cellIndex) {
+                var multiplied = cell.value * (cellIndex + 1);
+                row.total += multiplied;
+                columnTotals[cellIndex].value += multiplied;
+              });
+
+              // If bottom row total is not zero, add new row
+              if (row.total != 0 && rowIndex == $scope.table.length - 1) {
+                $scope.addRow();
+              }
+
+              // If second from bottom row total is zero, remove bottom row
+              if (row.total == 0 && rowIndex == $scope.table.length - 2) {
+                $scope.removeRow();
+              }
+            });
+
+            $scope.columnTotals = columnTotals;
+          }, true);
+
+          $scope.addRow = function() {
+            $scope.table.push(
+              {
+                cells: $scope.emptyRow(), 
+                total:0
+              }
+            );
+          };
+
+          $scope.removeRow = function(index) {
+            $scope.table.pop();
+          };
+
+          $scope.emptyRow = function() {
+            var row = [];
+
+            for (var i = 0; i < $scope.numInputRows; i++) {
+              row.push({value:0});
+            }
+
+            return row;
+          };
+        }]);
+    </script>
+  </body>
+</html>
